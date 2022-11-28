@@ -1,0 +1,47 @@
+Index: src/com/amazon/ata/music/playlist/service/activity/AddSongToPlaylistActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.amazon.ata.music.playlist.service.activity;\r\n\r\nimport com.amazon.ata.music.playlist.service.converters.AlbumTrackLinkedListConverter;\r\nimport com.amazon.ata.music.playlist.service.converters.ModelConverter;\r\nimport com.amazon.ata.music.playlist.service.dynamodb.models.AlbumTrack;\r\nimport com.amazon.ata.music.playlist.service.dynamodb.models.Playlist;\r\nimport com.amazon.ata.music.playlist.service.models.requests.AddSongToPlaylistRequest;\r\nimport com.amazon.ata.music.playlist.service.models.results.AddSongToPlaylistResult;\r\nimport com.amazon.ata.music.playlist.service.models.SongModel;\r\nimport com.amazon.ata.music.playlist.service.dynamodb.AlbumTrackDao;\r\nimport com.amazon.ata.music.playlist.service.dynamodb.PlaylistDao;\r\n\r\nimport com.amazonaws.services.lambda.runtime.Context;\r\nimport com.amazonaws.services.lambda.runtime.RequestHandler;\r\nimport org.apache.logging.log4j.LogManager;\r\nimport org.apache.logging.log4j.Logger;\r\n\r\nimport javax.inject.Inject;\r\nimport java.util.Collections;\r\nimport java.util.LinkedList;\r\n\r\n/**\r\n * Implementation of the AddSongToPlaylistActivity for the MusicPlaylistService's AddSongToPlaylist API.\r\n *\r\n * This API allows the customer to add a song to their existing playlist.\r\n */\r\npublic class AddSongToPlaylistActivity implements RequestHandler<AddSongToPlaylistRequest, AddSongToPlaylistResult> {\r\n    private final Logger log = LogManager.getLogger();\r\n    private final PlaylistDao playlistDao;\r\n    private final AlbumTrackDao albumTrackDao;\r\n    private ModelConverter modelConverter;\r\n    private AlbumTrackLinkedListConverter linkedListConverter;\r\n\r\n    /**\r\n     * Instantiates a new AddSongToPlaylistActivity object.\r\n     *\r\n     * @param playlistDao PlaylistDao to access the playlist table.\r\n     * @param albumTrackDao AlbumTrackDao to access the album_track table.\r\n     */\r\n    @Inject\r\n    public AddSongToPlaylistActivity(PlaylistDao playlistDao, AlbumTrackDao albumTrackDao) {\r\n        this.playlistDao = playlistDao;\r\n        this.albumTrackDao = albumTrackDao;\r\n    }\r\n\r\n    /**\r\n     * This method handles the incoming request by adding an additional song\r\n     * to a playlist and persisting the updated playlist.\r\n     * <p>\r\n     * It then returns the updated song list of the playlist.\r\n     * <p>\r\n     * If the playlist does not exist, this should throw a PlaylistNotFoundException.\r\n     * <p>\r\n     * If the album track does not exist, this should throw an AlbumTrackNotFoundException.\r\n     *\r\n     * @param addSongToPlaylistRequest request object containing the playlist ID and an asin and track number\r\n     *                                 to retrieve the song data\r\n     * @return addSongToPlaylistResult result object containing the playlist's updated list of\r\n     *                                 API defined {@link SongModel}s\r\n     */\r\n    @Override\r\n    public AddSongToPlaylistResult handleRequest(final AddSongToPlaylistRequest addSongToPlaylistRequest, Context context) {\r\n        log.info(\"Received AddSongToPlaylistRequest {} \", addSongToPlaylistRequest);\r\n\r\n        Playlist playlistToUpdate = playlistDao.getPlaylist(addSongToPlaylistRequest.getId());\r\n        AlbumTrack trackToAdd = albumTrackDao.getAlbumTrack(addSongToPlaylistRequest.getAsin(), addSongToPlaylistRequest.getTrackNumber());\r\n        LinkedList<AlbumTrack> convertedList = (LinkedList<AlbumTrack>)playlistToUpdate.getSongList();\r\n        if(addSongToPlaylistRequest.isQueueNext()){\r\n            convertedList.addFirst(trackToAdd);\r\n        }\r\n        convertedList.addLast(trackToAdd);\r\n        playlistToUpdate.setSongCount(playlistToUpdate.getSongCount() + 1);\r\n        playlistToUpdate.setSongList(convertedList);\r\n        playlistDao.savePlaylist(playlistToUpdate);\r\n\r\n        return null;\r\n//                AddSongToPlaylistResult.builder()\r\n//                .withSongList(Collections.singletonList(modelConverter.toSongModel()))\r\n//                .build();\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/com/amazon/ata/music/playlist/service/activity/AddSongToPlaylistActivity.java b/src/com/amazon/ata/music/playlist/service/activity/AddSongToPlaylistActivity.java
+--- a/src/com/amazon/ata/music/playlist/service/activity/AddSongToPlaylistActivity.java	
++++ b/src/com/amazon/ata/music/playlist/service/activity/AddSongToPlaylistActivity.java	
+@@ -73,9 +73,8 @@
+         playlistToUpdate.setSongList(convertedList);
+         playlistDao.savePlaylist(playlistToUpdate);
+ 
+-        return null;
+-//                AddSongToPlaylistResult.builder()
+-//                .withSongList(Collections.singletonList(modelConverter.toSongModel()))
+-//                .build();
++        return   AddSongToPlaylistResult.builder()
++                .withSongList(Collections.singletonList(modelConverter.toSongModel()))
++                .build();
+     }
+ }
+Index: .idea/aws.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"accountSettings\">\r\n    <option name=\"activeRegion\" value=\"us-west-2\" />\r\n    <option name=\"recentlyUsedProfiles\">\r\n      <list>\r\n        <option value=\"profile:899770735358_BD-Student-Unit-4\" />\r\n        <option value=\"profile:default\" />\r\n      </list>\r\n    </option>\r\n    <option name=\"recentlyUsedRegions\">\r\n      <list>\r\n        <option value=\"us-west-2\" />\r\n        <option value=\"us-west-1\" />\r\n        <option value=\"us-east-1\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/aws.xml b/.idea/aws.xml
+--- a/.idea/aws.xml	
++++ b/.idea/aws.xml	
+@@ -1,11 +1,12 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <project version="4">
+   <component name="accountSettings">
++    <option name="activeProfile" value="profile:default" />
+     <option name="activeRegion" value="us-west-2" />
+     <option name="recentlyUsedProfiles">
+       <list>
+-        <option value="profile:899770735358_BD-Student-Unit-4" />
+         <option value="profile:default" />
++        <option value="profile:899770735358_BD-Student-Unit-4" />
+       </list>
+     </option>
+     <option name="recentlyUsedRegions">
